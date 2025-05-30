@@ -1,0 +1,103 @@
+# Python (Backend)
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+backend/env/
+backend/venv/
+backend/ENV/
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+backend/instance/
+backend/.webassets-cache
+
+# Conda (if using conda)
+backend/conda-env/
+backend/.conda/
+
+# Environment variables
+.env
+backend/.env
+frontend/.env
+backend/.env.local
+backend/.env.development
+backend/.env.test
+backend/.env.production
+
+# YOLO model files (too large for git - backend specific)
+backend/*.weights
+backend/yolov4.weights
+backend/yolov4.cfg
+backend/coco.names
+
+# React/Node.js (Frontend)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp/
+frontend/.pnp.js
+frontend/coverage/
+
+# General Node.js (in case you have any in root)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and editors (Global)
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Logs (Global)
+logs/
+*.log
+
+# Runtime data (Global)
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files (Global)
+tmp/
+temp/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Project specific
+# Add any specific files you don't want to track
+backend/test_images/
+backend/recordings/
