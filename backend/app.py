@@ -69,3 +69,24 @@ def check_notifications():
     return jsonify({
         "notifications": recent
     })
+
+@app.route('/api/start', methods=['POST'])
+def start_monitoring():
+    """Start the monitoring process."""
+    global camera, is_monitoring, student_phone, monitoring_thread
+    
+    print("🚀 START ROUTE CALLED!")
+    print(f"📝 Request method: {request.method}")
+    print(f"📄 Request headers: {dict(request.headers)}")
+    
+    try:
+        data = request.get_json()
+        print(f"📦 Raw request data: {data}")
+        
+        if data is None:
+            print("❌ No JSON data received")
+            return jsonify({"success": False, "message": "No data received"}), 400
+        
+        phone = data.get('phone')
+        print(f"📞 Extracted phone: {phone}")
+        
