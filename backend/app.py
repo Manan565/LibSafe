@@ -23,3 +23,13 @@ target_objects = ["laptop", "backpack", "book", "cell phone", "bottle", "umbrell
 student_phone = None
 recent_notifications = []
 frame_count = 0
+
+@app.route('/api/status', methods=['GET'])
+def get_status():
+    """Get current monitoring status."""
+    global is_monitoring, student_phone
+    return jsonify({
+        "is_monitoring": is_monitoring,
+        "student_phone": student_phone,
+        "timestamp": time.time()
+    })
