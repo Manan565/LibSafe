@@ -171,3 +171,57 @@ def video_feed():
             # CHECK MONITORING STATE EVERY FRAME (not cached)
             current_is_monitoring = is_monitoring
             current_student_phone = student_phone
+
+            # Only log movements if they exist
+            if movements:
+                print(f"🎯 Frame {frame_count}: movements detected = {movements}")
+                print(f"🔍 FRESH State Check: is_monitoring={current_is_monitoring}, student_phone={current_student_phone}")
+            
+            # Check for notifications (using fresh state every time)
+            if (movements and current_is_monitoring and current_student_phone is not None and 
+                current_time - last_movement_check > 2.0):
+                
+                print(f"🚨🚨🚨 SENDING NOTIFICATION! 🚨🚨🚨")
+                print(f"📊 Movement details: {movements}")
+                
+                for obj, action in movements.items():
+                    message = f"LIBRARY SAFETY ALERT: Your {obj} has {action}! Please check your belongings."
+                    print(f"📤 Sending notification to {current_student_phone}: {message}")
+                    
+                    try:
+                        success_result, result = notifier.send_notification(current_student_phone, message)
+                        print(f"📨 Notification result: success={success_result}, result={result}")
+                        
+                        # Store notification for browser polling
+                        recent_notifications.append({
+                            "timestamp": time.time(),
+                            "message": message,
+                            "success": success_result
+                        })
+                        print(f"💾 Stored notification. Total stored: {len(recent_notifications)}")
+                        
+                        # Keep only the 10 most recent notifications
+                        if len(recent_notifications) > 10:
+                            recent_notifications.pop(0)
+                            
+                    except Exception as e:
+                        print(f"❌ ERROR in notification: {e}")
+                        import traceback
+                        traceback.print_exc()
+                
+                last_movement_check = current_time
+            
+            # Yield the processed frame
+            yield (b'--frame\r\n'
+                  b'Content-Type: image/jpeg\r\n\r\n' + processed_frame + b'\r\n')
+            
+            # Limit frame rate
+            time.sleep(0.05)
+        
+        # Cleanup
+        if camera is not None:
+            camera.release()
+            camera = None
+    
+    return Response(generate_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
