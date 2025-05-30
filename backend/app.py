@@ -113,3 +113,61 @@ def start_monitoring():
         # Reset detector
         detector.reset()
         print("🔄 Detector reset")
+        return jsonify({"success": True, "message": "Monitoring started successfully"})
+        
+    except Exception as e:
+        print(f"❌ ERROR in start_monitoring: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
+
+@app.route('/api/video_feed')
+def video_feed():
+    """Video streaming generator function that handles both display and monitoring."""
+    def generate_frames():
+        global camera, frame_count, is_monitoring, student_phone
+        
+        print("📹 Video feed started")
+        
+        # Initialize camera in this thread
+        camera = None
+        last_movement_check = time.time()
+        
+        # Try to open camera
+        for camera_index in [0, 1]:
+            print(f"📷 Video feed: Trying camera {camera_index}")
+            camera = cv2.VideoCapture(camera_index)
+            if camera.isOpened():
+                print(f"✅ Video feed: Camera {camera_index} opened successfully")
+                break
+            else:
+                camera = None
+        
+        if camera is None:
+            print("❌ Video feed: Failed to open any camera")
+            while True:
+                placeholder_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(placeholder_frame, 'Camera not available', (150, 240), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                
+                ret, frame_bytes = cv2.imencode('.jpg', placeholder_frame)
+                yield (b'--frame\r\n'
+                      b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes.tobytes() + b'\r\n')
+                time.sleep(0.1)
+        
+        # Main video loop
+        while True:
+            success, frame = camera.read()
+            if not success:
+                print("❌ Video feed: Failed to grab frame")
+                break
+            
+            frame_count += 1
+            current_time = time.time()
+            
+            # Process frame with object detection for display
+            processed_frame, movements = detector.process_frame(frame, target_objects)
+            
+            # CHECK MONITORING STATE EVERY FRAME (not cached)
+            current_is_monitoring = is_monitoring
+            current_student_phone = student_phone
