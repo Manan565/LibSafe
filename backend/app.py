@@ -33,3 +33,15 @@ def get_status():
         "student_phone": student_phone,
         "timestamp": time.time()
     })
+
+@app.route('/api/stop', methods=['POST'])
+def stop_monitoring():
+    """Stop the monitoring process."""
+    global camera, is_monitoring, student_phone
+    
+    print("🛑 Stopping monitoring...")
+    is_monitoring = False
+    student_phone = None
+    print(f"🔄 MONITORING DEACTIVATED - is_monitoring: {is_monitoring}, student_phone: {student_phone}")
+    
+    return jsonify({"success": True, "message": "Monitoring stopped successfully"})
