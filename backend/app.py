@@ -56,3 +56,16 @@ def stop_monitoring():
     print(f"MONITORING DEACTIVATED - is_monitoring: {is_monitoring}, student_phone: {student_phone}")
     
     return jsonify({"success": True, "message": "Monitoring stopped successfully"})
+
+@app.route('/api/check_notifications')
+def check_notifications():
+    """Return recent notifications for browserm."""
+    current_time = time.time()
+    recent = [n for n in recent_notifications if current_time - n["timestamp"] < 30]
+    
+    if recent:
+        print(f"📋 Returning {len(recent)} notifications to browser")
+    
+    return jsonify({
+        "notifications": recent
+    })
