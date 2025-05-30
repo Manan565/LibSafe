@@ -198,8 +198,8 @@ def video_feed():
                             "message": message,
                             "success": success_result
                         })
+
                         print(f"💾 Stored notification. Total stored: {len(recent_notifications)}")
-                        
                         # Keep only the 10 most recent notifications
                         if len(recent_notifications) > 10:
                             recent_notifications.pop(0)
