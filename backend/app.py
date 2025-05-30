@@ -89,4 +89,27 @@ def start_monitoring():
         
         phone = data.get('phone')
         print(f"📞 Extracted phone: {phone}")
+    
         
+        if not phone or not phone.strip():
+            print("❌ Phone number validation failed")
+            return jsonify({"success": False, "message": "Phone number is required"}), 400
+        
+        # Format phone number (simple validation)
+        phone = phone.strip()
+        if not phone.startswith('+'):
+            phone = '+' + phone
+        
+        print(f"📱 Formatted phone: {phone}")
+        
+        # CRITICAL: Set these BEFORE any other operations
+        student_phone = phone
+        is_monitoring = True
+        
+        print(f"✅ MONITORING ACTIVATED!")
+        print(f"📱 Phone: {student_phone}")
+        print(f"🚨 is_monitoring: {is_monitoring}")
+        
+        # Reset detector
+        detector.reset()
+        print("🔄 Detector reset")
