@@ -138,6 +138,44 @@ class ObjectDetector:
         self.prev_detections = current_detections
         
         return movements
+    def process_frame(self, frame, target_objects):
+        """Process a frame for object detection and movement."""
+        # Make a copy of the frame for drawing
+        display_frame = frame.copy()
+        
+        # Detect objects
+        detections = self.detect_objects(frame, target_objects)
+        
+        # Calculate movements
+        movements = self.calculate_movement(detections, target_objects)
+        
+        # Draw detection boxes
+        for detection in detections:
+            x, y, w, h = detection['box']
+            label = detection['label']
+            conf = detection['confidence']
+            
+            # Draw bounding box
+            color = (0, 255, 0)  # Green
+            cv2.rectangle(display_frame, (x, y), (x + w, y + h), color, 2)
+            
+            # Draw label
+            cv2.putText(display_frame, f"{label} ({conf:.2f})", (x, y - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        
+        # Add movement alert if any
+        if movements:
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            for idx, (obj, action) in enumerate(movements.items()):
+                alert_text = f"ALERT: {obj} has {action}!"
+                cv2.putText(display_frame, alert_text, (10, 50 + 30*idx), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        
+        # Convert the frame to JPEG format for sending to frontend
+        ret, jpeg = cv2.imencode('.jpg', display_frame)
+        
+        return jpeg.tobytes(), movements
+
 
     
 
