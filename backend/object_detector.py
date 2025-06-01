@@ -74,6 +74,24 @@ class ObjectDetector:
                     boxes.append([x, y, w, h])
                     confidences.append(float(confidence))
                     class_ids.append(class_id)
+        # Apply non-max suppression to remove redundant overlapping boxes
+        indices = cv2.dnn.NMSBoxes(boxes, confidences, self.confidence_threshold, 0.4)
+        
+        # Create detections list with class, box, and confidence
+        detections = []
+        if len(indices) > 0:
+            for i in indices.flatten():
+                label = self.class_names[class_ids[i]]
+                if label in target_objects:
+                    x, y, w, h = boxes[i]
+                    detections.append({
+                        'label': label,
+                        'box': [x, y, w, h],
+                        'confidence': confidences[i],
+                        'center': [x + w//2, y + h//2]  # Center point for movement tracking
+                    })
+                    
+        return detections
 
 
     
