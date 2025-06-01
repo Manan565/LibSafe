@@ -13,3 +13,25 @@ class ObjectDetector:
         self.output_layers = None
         self.last_notification_time = {}  # To prevent notification spam
         self.setup_model()
+        
+    def setup_model(self):
+      """Load YOLOv4 model and class names."""
+      print("Loading YOLO model...")
+      
+      # Load COCO class names
+      with open('coco.names', 'r') as f:
+          self.class_names = f.read().strip().split('\n')
+          
+      # Load YOLOv4 model
+      self.net = cv2.dnn.readNetFromDarknet('yolov4.cfg', 'yolov4.weights')
+      
+      # Force OpenCV to use DirectShow on Windows
+      # (this often works better than the default Media Foundation backend)
+      self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+      self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+      
+      # Get output layer names
+      layer_names = self.net.getLayerNames()
+      self.output_layers = [layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
+      
+      print("Model loaded successfully!")

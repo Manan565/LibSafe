@@ -133,6 +133,7 @@ def video_feed():
         camera = None
         last_movement_check = time.time()
         
+        
         # Try to open camera
         for camera_index in [0, 1]:
             print(f"📷 Video feed: Trying camera {camera_index}")
