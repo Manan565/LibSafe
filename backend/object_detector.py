@@ -13,7 +13,7 @@ class ObjectDetector:
         self.output_layers = None
         self.last_notification_time = {}  # To prevent notification spam
         self.setup_model()
-        
+
     def setup_model(self):
       """Load YOLOv4 model and class names."""
       print("Loading YOLO model...")
@@ -35,3 +35,24 @@ class ObjectDetector:
       self.output_layers = [layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
       
       print("Model loaded successfully!")
+
+    def detect_objects(self, frame, target_objects):
+        """Detect objects in a frame."""
+        height, width, _ = frame.shape
+        
+        # Create blob from image
+        blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
+        
+        # Set input to the network
+        self.net.setInput(blob)
+        
+        # Run forward pass
+        outputs = self.net.forward(self.output_layers)
+        
+        # Process outputs
+        class_ids = []
+        confidences = []
+        boxes = []
+
+    
+
