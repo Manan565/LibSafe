@@ -92,6 +92,55 @@ class ObjectDetector:
                     })
                     
         return detections
+    def calculate_movement(self, current_detections, target_objects):
+        """Calculate movement between previous and current detections."""
+        # If no previous detections, can't calculate movement
+        if not self.prev_detections:
+            self.prev_detections = current_detections
+            return {}
+        
+        movements = {}
+        
+        # Create dictionaries for easier lookup
+        prev_dict = {d['label']: d for d in self.prev_detections}
+        curr_dict = {d['label']: d for d in current_detections}
+        
+        # Check each object type we're tracking
+        for label in target_objects:
+            current_time = time.time()
+
+             
+            # Skip objects that received a notification in the last 30 seconds
+            if label in self.last_notification_time and current_time - self.last_notification_time[label] < 30:
+                continue
+                
+            # If object disappeared
+            if label in prev_dict and label not in curr_dict:
+                movements[label] = "disappeared"
+                self.last_notification_time[label] = current_time
+                continue
+                
+            # If object still exists, check distance moved
+            if label in prev_dict and label in curr_dict:
+                prev_center = prev_dict[label]['center']
+                curr_center = curr_dict[label]['center']
+                
+                # Calculate Euclidean distance
+                distance = np.sqrt((prev_center[0] - curr_center[0])**2 + 
+                                  (prev_center[1] - curr_center[1])**2)
+                
+                # If distance greater than sensitivity threshold, consider it moved
+                if distance > self.sensitivity:
+                    movements[label] = "moved"
+                    self.last_notification_time[label] = current_time
+        
+        # Update previous detections
+        self.prev_detections = current_detections
+        
+        return movements
+
+    
+
 
 
     
