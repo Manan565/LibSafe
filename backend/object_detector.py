@@ -138,6 +138,11 @@ class ObjectDetector:
         self.prev_detections = current_detections
         
         return movements
+    def reset(self):
+        """Reset the detector state."""
+        self.prev_detections = []
+        self.last_notification_time = {}
+
     def process_frame(self, frame, target_objects):
         """Process a frame for object detection and movement."""
         # Make a copy of the frame for drawing
