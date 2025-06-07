@@ -59,4 +59,60 @@ const Monitoring = ({ phoneNumber, stopMonitoring }) => {
     { name: "Umbrella", icon: <FaUmbrellaBeach /> },
   ];
 
-  
+   return (
+    <div className="flex flex-col md:flex-row">
+      <div className="md:w-2/3">
+        <div className="video-container">
+          {streamUrl ? (
+            <img
+              src={streamUrl}
+              alt="Video feed"
+              onError={(e) => {
+                console.log("Error loading video feed");
+                // Retry with a new timestamp after 2 seconds
+                setTimeout(() => {
+                  setStreamUrl(`/api/video_feed?t=${new Date().getTime()}`);
+                }, 2000);
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-white text-lg">Connecting to camera...</p>
+            </div>
+          )}
+
+          <div className="alert-badge">Monitoring Active</div>
+        </div>
+      </div>
+
+      <div className="md:w-1/3 bg-gray-50 p-6">
+        <h2 className="text-2xl font-bold text-blue-900 mb-4">
+          Monitoring Active
+        </h2>
+
+        <div className="mb-6">
+          <p className="text-gray-700 mb-2 font-medium">
+            Notifications will be sent to:
+          </p>
+          <div className="bg-white p-3 rounded border border-gray-200 text-gray-800">
+            {phoneNumber}
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-gray-700 mb-2 font-medium">
+            Watching for movement of:
+          </p>
+          <ul className="grid grid-cols-2 gap-2">
+            {objectList.map((object, index) => (
+              <li
+                key={index}
+                className="flex items-center bg-white p-2 rounded border border-gray-200"
+              >
+                <span className="text-blue-900 mr-2">{object.icon}</span>
+                <span className="text-gray-800">{object.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
