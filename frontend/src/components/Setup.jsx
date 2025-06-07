@@ -48,7 +48,7 @@ const Setup = ({ phoneNumber, setPhoneNumber, startMonitoring }) => {
       setIsLoading(false);
     }
   };
-return (
+  return (
     <div className="p-8">
       <h2 className="text-2xl font-bold text-blue-900 mb-4 text-center">
         Get Started
@@ -90,4 +90,40 @@ return (
             {error}
           </div>
         )}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-blue-900 text-white py-3 px-4 rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center disabled:bg-blue-300"
+        >
+          {isLoading ? (
+            <>
+              <span className="animate-spin mr-2">⟳</span>
+              Starting...
+            </>
+          ) : (
+            <>
+              <FaPlay className="mr-2" />
+              Start Monitoring
+            </>
+          )}
+        </button>
+      </form>
 
+      <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+        <h3 className="font-bold text-blue-900 mb-2">How it works:</h3>
+        <ol className="list-decimal pl-5 text-gray-700 space-y-1">
+          <li>Enter your phone number to receive SMS alerts</li>
+          <li>Place your valuables in view of your webcam</li>
+          <li>Click "Start Monitoring" to begin surveillance</li>
+          <li>
+            If any items move or disappear, you'll receive an immediate text
+            alert
+          </li>
+          <li>Return to your study space and check on your belongings</li>
+        </ol>
+      </div>
+    </div>
+  );
+};
+
+export default Setup;
