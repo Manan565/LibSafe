@@ -59,7 +59,7 @@ const Monitoring = ({ phoneNumber, stopMonitoring }) => {
     { name: "Umbrella", icon: <FaUmbrellaBeach /> },
   ];
 
-   return (
+  return (
     <div className="flex flex-col md:flex-row">
       <div className="md:w-2/3">
         <div className="video-container">
@@ -116,3 +116,36 @@ const Monitoring = ({ phoneNumber, stopMonitoring }) => {
           </ul>
         </div>
 
+        <p className="text-gray-600 mb-6">
+          If any of these items move, you'll receive an SMS alert.
+        </p>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={() => handleStop()}
+          disabled={isLoading}
+          className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center justify-center disabled:bg-red-300"
+        >
+          {isLoading ? (
+            <>
+              <span className="animate-spin mr-2">⟳</span>
+              Stopping...
+            </>
+          ) : (
+            <>
+              <FaStop className="mr-2" />
+              Stop Monitoring
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Monitoring;
