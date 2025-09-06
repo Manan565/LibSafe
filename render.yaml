@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: library-security-system
+    env: python
+    buildCommand: "cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt"
+    startCommand: "cd backend && gunicorn app:app"
+    plan: free
+    envVars:
+      - key: TWILIO_ACCOUNT_SID
+        value: ACb41e74158434485bef35cc2a1b04efc3
+      - key: TWILIO_AUTH_TOKEN
+        value: d4e6a1e98c11f908a0975e69ce12bc94
+      - key: TWILIO_PHONE_NUMBER
+        value: +16504347694
