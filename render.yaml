@@ -2,7 +2,7 @@ services:
   - type: web
     name: library-security-system
     env: python
-    buildCommand: "cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt"
+    buildCommand: "python -m pip install --upgrade pip setuptools wheel && cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt"
     startCommand: "cd backend && gunicorn app:app"
     plan: free
     envVars:
@@ -12,3 +12,5 @@ services:
         value: d4e6a1e98c11f908a0975e69ce12bc94
       - key: TWILIO_PHONE_NUMBER
         value: +16504347694
+      - key: PORT
+        value: 10000

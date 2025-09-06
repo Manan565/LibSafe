@@ -117,6 +117,6 @@ if __name__ == "__main__":
     notifier = Notifier()
     
     # Uncomment the line below to test with your phone number
-    # notifier.test_sms("+1234567890")  # Replace with your phone number
+    # notifier.te  # Replace with your phone number
     
     print("✅ Notifier test complete!")
