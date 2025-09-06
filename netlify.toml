@@ -1,6 +1,19 @@
 [build]
+  command = "cd frontend && npm install && npm run build && cd .. && python -m pip install --upgrade pip && pip install -r requirements.txt"
   publish = "frontend/dist"
-  command = "cd frontend && npm install && npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PYTHON_VERSION = "3.12.3"
+
+[functions]
+  directory = "backend"
+  runtime = "python3.12"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/app/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"
