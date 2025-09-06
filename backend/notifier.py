@@ -109,6 +109,7 @@ class Notifier:
             print(f"❌ Test failed! Result: {result}")
         
         return success, result
+        
 
 # Test function for standalone testing
 if __name__ == "__main__":

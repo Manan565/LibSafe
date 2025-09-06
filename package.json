@@ -1,0 +1,12 @@
+{
+  "name": "library-security-system",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && python app.py"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  }
+}

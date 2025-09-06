@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request, jsonify, send_from_directory, send_file
 import cv2
 import numpy as np
 import os
@@ -8,7 +8,7 @@ from flask_cors import CORS
 from object_detector import ObjectDetector
 from notifier import Notifier
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/dist')
 CORS(app)  # Enable CORS for all routes
 
 # Initialize detector and notifier
@@ -23,6 +23,24 @@ target_objects = ["laptop", "backpack", "book", "cell phone", "bottle", "umbrell
 student_phone = None
 recent_notifications = []
 frame_count = 0
+
+@app.route('/')
+def serve_frontend():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def serve_frontend_routes(path):
+    if path.startswith('api/'):
+        # Let API routes handle themselves
+        from flask import abort
+        abort(404)
+    
+    # Check if file exists in static folder
+    if os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        # Serve index.html for client-side routing
+        return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
@@ -53,12 +71,7 @@ def stop_monitoring():
     print("🛑 Stopping monitoring...")
     is_monitoring = False
     student_phone = None
-    
-    # Reset the notifier for next session
-    notifier.reset_session()
-    
     print(f"MONITORING DEACTIVATED - is_monitoring: {is_monitoring}, student_phone: {student_phone}")
-    print("🔄 Notifier reset - Ready for next monitoring session")
     
     return jsonify({"success": True, "message": "Monitoring stopped successfully"})
 
@@ -111,13 +124,9 @@ def start_monitoring():
         student_phone = phone
         is_monitoring = True
         
-        # Reset notifier for new monitoring session
-        notifier.reset_session()
-        
         print(f"✅ MONITORING ACTIVATED!")
         print(f"📱 Phone: {student_phone}")
         print(f"🚨 is_monitoring: {is_monitoring}")
-        print(f"🔄 Notifier session reset - Ready to send ONE notification")
         
         # Reset detector
         detector.reset()
@@ -129,7 +138,6 @@ def start_monitoring():
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
-
 
 @app.route('/api/video_feed')
 def video_feed():
@@ -168,6 +176,7 @@ def video_feed():
         
         # Main video loop
         while True:
+            
             success, frame = camera.read()
             if not success:
                 print("❌ Video feed: Failed to grab frame")
@@ -200,8 +209,9 @@ def video_feed():
                     print(f"📤 Sending notification to {current_student_phone}: {message}")
                     
                     try:
-                        success_result, result = notifier.send_notification(current_student_phone, message)
-                        print(f"📨 Notification result: success={success_result}, result={result}")
+                        if len(recent_notifications)==0:
+                            success_result, result = notifier.send_notification(current_student_phone, message)
+                        print(f"📨 Notification result: success={success}, result={result}")
                         
                         # Store notification for browser polling
                         recent_notifications.append({
@@ -236,26 +246,6 @@ def video_feed():
     
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-@app.route('/api/notifier_status', methods=['GET'])
-def get_notifier_status():
-    """Get current notifier session status."""
-    status = notifier.get_session_status()
-    return jsonify({
-        "notifier_status": status,
-        "is_monitoring": is_monitoring,
-        "student_phone": student_phone
-    })
 if __name__ == '__main__':
-    try:
-        print("🚀 Starting Flask application...")
-        print("Frontend URL: http://localhost:5173")
-        print("Backend API: http://localhost:5000")
-        print("Press CTRL+C to stop the server")
-        print("-" * 50)
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    except Exception as e:
-        print(f"❌ Error starting Flask app: {e}")
-        import traceback
-        traceback.print_exc()
-    except KeyboardInterrupt:
-        print("🛑 Server stopped by user")
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
