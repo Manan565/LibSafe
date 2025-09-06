@@ -8,7 +8,7 @@ from flask_cors import CORS
 from object_detector import ObjectDetector
 from notifier import Notifier
 
-app = Flask(__name__, static_folder='../frontend/dist')
+app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Initialize detector and notifier
@@ -24,23 +24,7 @@ student_phone = None
 recent_notifications = []
 frame_count = 0
 
-@app.route('/')
-def serve_frontend():
-    return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/<path:path>')
-def serve_frontend_routes(path):
-    if path.startswith('api/'):
-        # Let API routes handle themselves
-        from flask import abort
-        abort(404)
-    
-    # Check if file exists in static folder
-    if os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        # Serve index.html for client-side routing
-        return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
@@ -247,5 +231,4 @@ def video_feed():
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=True)
