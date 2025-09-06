@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  publish = "dist"
+  publish = "frontend/dist"
   command = "npm run build"
 
 [build.environment]
@@ -9,7 +9,6 @@
 
 [functions]
   directory = "backend"
-  included_files = ["**"]
 
 [[redirects]]
   from = "/api/*"
