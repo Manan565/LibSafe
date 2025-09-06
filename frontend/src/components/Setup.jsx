@@ -24,7 +24,7 @@ const Setup = ({ phoneNumber, setPhoneNumber, startMonitoring }) => {
         phone: phoneNumber,
       });
 
-      const response = await axios.post("http://localhost:5000/api/start", {
+      const response = await axios.post("/api/start", {
         phone: phoneNumber,
       });
 

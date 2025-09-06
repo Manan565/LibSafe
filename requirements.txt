@@ -1,8 +1,0 @@
-# requirements.txt - Python 3.12 compatible versions
-Flask==3.0.0
-flask-cors==4.0.0
-opencv-python-headless==4.9.0.80
-numpy>=1.24.0,<2.0.0
-python-dotenv==1.0.0
-twilio==9.0.4
-gunicorn==21.2.0

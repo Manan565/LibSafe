@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, jsonify, send_from_directory, send_file
+from flask import Flask, Response, request, jsonify
 import cv2
 import numpy as np
 import os
@@ -16,15 +16,21 @@ detector = ObjectDetector(confidence_threshold=0.6, sensitivity=40.0)
 notifier = Notifier()
 
 # Global variables
-camera = None
 is_monitoring = False
-monitoring_thread = None
 target_objects = ["laptop", "backpack", "book", "cell phone", "bottle", "umbrella"]
 student_phone = None
 recent_notifications = []
-frame_count = 0
+last_movement_check = {}
 
-
+@app.route('/', methods=['GET'])
+def health_check():
+    """Health check route for cloud deployment."""
+    return jsonify({
+        "status": "healthy",
+        "message": "Library Safety Backend is running",
+        "timestamp": time.time(),
+        "environment": "cloud"
+    })
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
@@ -50,32 +56,20 @@ def test_route():
 @app.route('/api/stop', methods=['POST'])
 def stop_monitoring():
     """Stop the monitoring process."""
-    global camera, is_monitoring, student_phone
+    global is_monitoring, student_phone
     
     print("🛑 Stopping monitoring...")
     is_monitoring = False
     student_phone = None
+    detector.reset()  # Reset detector state
     print(f"MONITORING DEACTIVATED - is_monitoring: {is_monitoring}, student_phone: {student_phone}")
     
     return jsonify({"success": True, "message": "Monitoring stopped successfully"})
 
-@app.route('/api/check_notifications')
-def check_notifications():
-    """Return recent notifications for browserm."""
-    current_time = time.time()
-    recent = [n for n in recent_notifications if current_time - n["timestamp"] < 30]
-    
-    if recent:
-        print(f"📋 Returning {len(recent)} notifications to browser")
-    
-    return jsonify({
-        "notifications": recent
-    })
-
 @app.route('/api/start', methods=['POST'])
 def start_monitoring():
     """Start the monitoring process."""
-    global camera, is_monitoring, student_phone, monitoring_thread
+    global is_monitoring, student_phone
     
     print("🚀 START ROUTE CALLED!")
     print(f"📝 Request method: {request.method}")
@@ -91,7 +85,6 @@ def start_monitoring():
         
         phone = data.get('phone')
         print(f"📞 Extracted phone: {phone}")
-    
         
         if not phone or not phone.strip():
             print("❌ Phone number validation failed")
@@ -123,112 +116,156 @@ def start_monitoring():
         traceback.print_exc()
         return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
 
-@app.route('/api/video_feed')
-def video_feed():
-    """Video streaming generator function that handles both display and monitoring."""
-    def generate_frames():
-        global camera, frame_count, is_monitoring, student_phone
+@app.route('/api/process-frame', methods=['POST'])
+def process_frame():
+    """Process individual frames sent from frontend camera."""
+    global is_monitoring, student_phone, recent_notifications, last_movement_check
+    
+    print(f"🖼️ Frame processing request received")
+    print(f"📊 Current state: is_monitoring={is_monitoring}, student_phone={student_phone}")
+    
+    if not is_monitoring or not student_phone:
+        return jsonify({"error": "Monitoring not active", "is_monitoring": is_monitoring}), 400
+    
+    try:
+        # Check if frame was uploaded
+        if 'frame' not in request.files:
+            print("❌ No frame in request.files")
+            return jsonify({"error": "No frame received"}), 400
         
-        print("📹 Video feed started")
+        frame_file = request.files['frame']
+        phone = request.form.get('phone', student_phone)
         
-        # Initialize camera in this thread
-        camera = None
-        last_movement_check = time.time()
+        print(f"📱 Processing frame for phone: {phone}")
+        print(f"📏 Frame file size: {len(frame_file.read())} bytes")
+        frame_file.seek(0)  # Reset file pointer after reading size
         
+        # Read frame data
+        frame_bytes = np.frombuffer(frame_file.read(), np.uint8)
+        frame = cv2.imdecode(frame_bytes, cv2.IMREAD_COLOR)
         
-        # Try to open camera
-        for camera_index in [0, 1]:
-            print(f"📷 Video feed: Trying camera {camera_index}")
-            camera = cv2.VideoCapture(camera_index)
-            if camera.isOpened():
-                print(f"✅ Video feed: Camera {camera_index} opened successfully")
-                break
-            else:
-                camera = None
+        if frame is None:
+            print("❌ Failed to decode frame")
+            return jsonify({"error": "Invalid frame data"}), 400
         
-        if camera is None:
-            print("❌ Video feed: Failed to open any camera")
-            while True:
-                placeholder_frame = np.zeros((480, 640, 3), dtype=np.uint8)
-                cv2.putText(placeholder_frame, 'Camera not available', (150, 240), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                
-                ret, frame_bytes = cv2.imencode('.jpg', placeholder_frame)
-                yield (b'--frame\r\n'
-                      b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes.tobytes() + b'\r\n')
-                time.sleep(0.1)
+        print(f"🖼️ Frame decoded successfully: {frame.shape}")
         
-        # Main video loop
-        while True:
+        # Process frame with object detector
+        processed_frame_bytes, movements = detector.process_frame(frame, target_objects)
+        
+        print(f"🎯 Detection results: {movements}")
+        
+        # Send notifications if movements detected
+        current_time = time.time()
+        notifications_sent = []
+        
+        if movements and phone:
+            print(f"🚨 MOVEMENTS DETECTED: {movements}")
             
-            success, frame = camera.read()
-            if not success:
-                print("❌ Video feed: Failed to grab frame")
-                break
-            
-            frame_count += 1
-            current_time = time.time()
-            
-            # Process frame with object detection for display
-            processed_frame, movements = detector.process_frame(frame, target_objects)
-            
-            # CHECK MONITORING STATE EVERY FRAME (not cached)
-            current_is_monitoring = is_monitoring
-            current_student_phone = student_phone
-
-            # Only log movements if they exist
-            if movements:
-                print(f"🎯 Frame {frame_count}: movements detected = {movements}")
-                print(f"🔍 FRESH State Check: is_monitoring={current_is_monitoring}, student_phone={current_student_phone}")
-            
-            # Check for notifications (using fresh state every time)
-            if (movements and current_is_monitoring and current_student_phone is not None and 
-                current_time - last_movement_check > 2.0):
-                
-                print(f"🚨🚨🚨 SENDING NOTIFICATION! 🚨🚨🚨")
-                print(f"📊 Movement details: {movements}")
-                
-                for obj, action in movements.items():
+            for obj, action in movements.items():
+                # Rate limiting: only send notifications every 30 seconds per object
+                if obj not in last_movement_check or current_time - last_movement_check[obj] > 30:
                     message = f"LIBRARY SAFETY ALERT: Your {obj} has {action}! Please check your belongings."
-                    print(f"📤 Sending notification to {current_student_phone}: {message}")
                     
                     try:
-                        if len(recent_notifications)==0:
-                            success_result, result = notifier.send_notification(current_student_phone, message)
-                        print(f"📨 Notification result: success={success}, result={result}")
+                        print(f"📤 Sending notification for {obj}")
+                        success_result, result = notifier.send_notification(phone, message)
                         
-                        # Store notification for browser polling
-                        recent_notifications.append({
-                            "timestamp": time.time(),
+                        # Store notification
+                        notification_record = {
+                            "timestamp": current_time,
                             "message": message,
-                            "success": success_result
-                        })
-
-                        print(f"💾 Stored notification. Total stored: {len(recent_notifications)}")
-                        # Keep only the 10 most recent notifications
+                            "success": success_result,
+                            "object": obj,
+                            "action": action
+                        }
+                        recent_notifications.append(notification_record)
+                        notifications_sent.append(notification_record)
+                        
+                        print(f"📨 Notification sent for {obj}: success={success_result}")
+                        
+                        # Update last notification time for this object
+                        last_movement_check[obj] = current_time
+                        
+                        # Keep only recent notifications (last 10)
                         if len(recent_notifications) > 10:
                             recent_notifications.pop(0)
                             
                     except Exception as e:
-                        print(f"❌ ERROR in notification: {e}")
+                        print(f"❌ Notification error for {obj}: {e}")
                         import traceback
                         traceback.print_exc()
-                
-                last_movement_check = current_time
-            
-            # Yield the processed frame
-            yield (b'--frame\r\n'
-                  b'Content-Type: image/jpeg\r\n\r\n' + processed_frame + b'\r\n')
-            
-            # Limit frame rate
-            time.sleep(0.05)
+                else:
+                    print(f"⏱️ Skipping notification for {obj} (rate limited)")
         
-        # Cleanup
-        if camera is not None:
-            camera.release()
-            camera = None
+        return jsonify({
+            "success": True,
+            "movements_detected": movements,
+            "objects_found": list(movements.keys()) if movements else [],
+            "notifications_sent": len(notifications_sent),
+            "timestamp": time.time(),
+            "monitoring_active": is_monitoring
+        })
+        
+    except Exception as e:
+        print(f"❌ Frame processing error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Processing failed: {str(e)}"}), 500
+
+@app.route('/api/check_notifications')
+def check_notifications():
+    """Return recent notifications for browser."""
+    current_time = time.time()
+    recent = [n for n in recent_notifications if current_time - n["timestamp"] < 60]  # Last 60 seconds
     
-    return Response(generate_frames(),
+    if recent:
+        print(f"📋 Returning {len(recent)} notifications to browser")
+    
+    return jsonify({
+        "notifications": recent,
+        "count": len(recent),
+        "timestamp": current_time
+    })
+
+# Keep the old video_feed endpoint for demo purposes (shows static demo)
+@app.route('/api/video_feed')
+def video_feed():
+    """Demo video feed for cloud deployment - shows placeholder."""
+    def generate_demo_frames():
+        while True:
+            # Create demo frame
+            demo_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            
+            # Add demo content
+            cv2.putText(demo_frame, 'CLOUD DEPLOYMENT MODE', (150, 200), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(demo_frame, 'Camera runs in browser', (180, 250), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.putText(demo_frame, 'Frames sent to backend for processing', (120, 300), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            
+            # Add timestamp
+            timestamp = time.strftime("%H:%M:%S")
+            cv2.putText(demo_frame, f'Server Time: {timestamp}', (200, 350), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            
+            ret, frame_bytes = cv2.imencode('.jpg', demo_frame)
+            yield (b'--frame\r\n'
+                  b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes.tobytes() + b'\r\n')
+            time.sleep(1)  # Slow refresh for demo
+    
+    return Response(generate_demo_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get port from environment variable (Render/Heroku provides this)
+    port = int(os.environ.get('PORT', 5000))
+    
+    print("🚀 Starting Flask application...")
+    print(f"🌐 Running on port: {port}")
+    print("🎯 Mode: Cloud-ready (frontend camera)")
+    print("Press CTRL+C to stop the server")
+    
+    # Use 0.0.0.0 to accept connections from any IP
+    app.run(debug=False, host='0.0.0.0', port=port)
