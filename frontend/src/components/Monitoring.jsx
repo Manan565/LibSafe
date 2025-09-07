@@ -133,7 +133,7 @@ const Monitoring = ({ phoneNumber, stopMonitoring }) => {
 
       try {
         console.log("Sending frame to backend...");
-        const response = await axios.post(' http://localhost:5000/api/process-frame', formData, {
+        const response = await axios.post(' https://libsafe-2.onrender.com/api/process-frame', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 10000
         });
@@ -152,7 +152,7 @@ const Monitoring = ({ phoneNumber, stopMonitoring }) => {
 
   const checkNotifications = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/check_notifications');
+      const response = await axios.get('https://libsafe-2.onrender.com/api/check_notifications');
       if (response.data.notifications && response.data.notifications.length > 0) {
         setNotifications(response.data.notifications);
         console.log("Updated notifications:", response.data.notifications.length);
@@ -167,7 +167,7 @@ const Monitoring = ({ phoneNumber, stopMonitoring }) => {
     
     try {
       console.log("Stopping monitoring...");
-      await axios.post('http://localhost:5000/api/stop');
+      await axios.post('https://libsafe-2.onrender.com/api/stop');
       stopCamera();
       console.log("Monitoring stopped successfully");
       stopMonitoring();
