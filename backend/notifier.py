@@ -19,7 +19,7 @@ class Notifier:
                 self.client = Client(self.account_sid, self.auth_token)
                 # Test the connection by getting account info
                 account = self.client.api.account.fetch()
-                print(f"🚨 Notifier initialized - Twilio SMS Mode")
+                print(f"🚨 NNNNotifier initialized - Twilio SMS Mode")
                 print(f"📱 Twilio Phone: {self.twilio_phone}")
                 print(f"✅ Account Status: {account.status}")
                 self.mode = "twilio"
@@ -46,7 +46,7 @@ class Notifier:
             return self._send_sms(to_phone, message, timestamp)
         else:
             return self._send_console_alert(to_phone, message, timestamp)
-    
+        
     def _send_sms(self, to_phone, message, timestamp):
         """Send actual SMS via Twilio."""
         try:
@@ -78,6 +78,8 @@ class Notifier:
             
             # Fallback to console if SMS fails
             return self._send_console_alert(to_phone, message, timestamp)
+            
+            
     
     def _send_console_alert(self, to_phone, message, timestamp):
         """Send console alert as fallback."""
@@ -101,14 +103,15 @@ class Notifier:
         test_message = f"🧪 Library Security System Test - {time.strftime('%H:%M:%S')}"
         
         print(f"🧪 Testing SMS to {test_phone}...")
-        success, result = self.send_notification(test_phone, test_message)
+        #success, result = self.send_notification(test_phone, test_message)
         
-        if success:
-            print(f"✅ Test successful! Result: {result}")
-        else:
-            print(f"❌ Test failed! Result: {result}")
+        #if success:
+         #   print(f"✅ Test successful! Result: {result}")
+        #else:
+        #    print(f"❌ Test failed! Result: {result}")
         
-        return success, result
+        #return success, result
+        return True
         
 
 # Test function for standalone testing

@@ -1,7 +1,7 @@
 Flask
 flask-cors
-opencv-python-headless
-numpy
+google-cloud-vision
 python-dotenv
 twilio
 gunicorn
+google-auth

@@ -3,7 +3,7 @@ import Header from "./components/Header";
 import Setup from "./components/Setup";
 import Monitoring from "./components/Monitoring";
 import Footer from "./components/Footer";
-import "./App.css";
+import "./index.css";
 
 function App() {
   const [isMonitoring, setIsMonitoring] = useState(false);
